@@ -1,0 +1,46 @@
+\documentclass{scrartcl}
+\usepackage[a4paper,left=1in,right=1in,top=1.2in,bottom=1in]{geometry}
+\usepackage{siunitx}
+\usepackage{graphicx}
+\setkomafont{disposition}{\normalfont\bfseries}
+\newcommand*\diff{\mathop{}\!\mathrm{d}}
+\newcommand*\Diff[1]{\mathop{}\!\mathrm{d^#1}}
+\newcommand*\colvec[3][]{
+    \begin{pmatrix}\ifx\relax#1\relax\else#1\\\fi#2\\#3\end{pmatrix}
+}
+
+%title
+\title{Exercise 02:\\State space analysis}
+\subtitle{Theoretical Neuroscience II}
+\author{Johannes G\"atjen \and Lorena Morton}
+
+%use these for structure/overview
+\newcommand\Question{%
+  \textbf{Question:}%
+}
+\newcommand\Answer{%
+  \textbf{Answer:}%
+}
+
+\begin{document}
+\maketitle
+
+\section{Task A}
+
+We investigate a linear recurrent network with 2 populations. The time-development is given by the equation
+
+\begin{align*}
+\frac{\diff \mathbf{v}}{\diff t} = \mathbf{A} \cdot \mathbf{v} + \mathbf{b} \\
+\shortintertext{with}
+\operatorname\mathbf{v}(t) = 
+\end{align*}
+
+
+%include picture
+%\begin{figure}
+%\centering
+%\includegraphics[trim = {1.3cm 0 2cm 0.9cm}, width=\textwidth, clip]{../pics/picname}
+%\caption{caption text}
+%\label{label}
+%\end{figure}
+\end{document}
