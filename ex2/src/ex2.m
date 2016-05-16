@@ -1,24 +1,29 @@
 %authors: Johannes Gätjen, Lorena Morton
-%threshold for one or two steady states between 2.38 and 2.381
+%close all;
 kappa = 6; %free parameter, change between 2 and 6
 
-
 deltaT = 0.01;
-maxT = 10;
+maxT = 100;
 time_vector = 0:deltaT:maxT;
 
 Fmax = 40;
 
 input = [-10; 10];
-initial = [5; 15];
+initial = [7; 11];
 activity = repmat(initial, 1, length(time_vector));
 connectionM = [-2 3; -3 2 ];
 for t = 1:length(time_vector) - 1
     currentSteadyState = Factivation((connectionM * activity(:, t)) + input, Fmax, kappa); % v_i^ss
     activity(:, t+1) = currentSteadyState + (activity(:, t) - currentSteadyState) * exp(-deltaT);
 end
-
-plot(time_vector, activity(1, :));hold on;
-plot(time_vector, activity(2, :), 'r');
+figure;
+plot(time_vector, activity);hold on;
+xlabel('t [aut]');
+ylabel('population activity');
+legend('v_1', 'v_2');
 figure();
-plot(activity(1, :), activity(2, :));
+plot(activity(1, :), activity(2, :)); hold on
+xlabel('v_1');
+ylabel('v_2');
+plot(initial(1), initial(2), '+');
+legend('trajectory');
