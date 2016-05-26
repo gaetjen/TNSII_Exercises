@@ -1,17 +1,23 @@
 %authors: Johannes Gätjen, Lorena Morton
-% kappas = 0.01:0.01:2.5;
+% comment and uncomment according to plotting wishes
+% kappas = 0.01:0.01:2;
 % rmse = zeros(size(kappas));
-sigmas = 0.01:0.5:250;
-rmse = zeros(size(sigmas));
+% sigmas = 0.01:0.5:250;
+% rmse = zeros(size(sigmas));
+numN = 35:200;
+rmse = zeros(size(numN));
 for i = 1:length(rmse)
     close all;
     rMax = 1;
 %     kappa = kappas(i);
 %     sigma = 30;
+%     upstream = 40;
+%     kappa = 0.22;
+%     sigma = sigmas(i);
+%     upstream = 40;
     kappa = 0.22;
-    sigma = sigmas(i);
-    upstream = 40; % number of neurons
-    downstream = 40;
+    sigma = 30;
+    upstream = numN(i);
     nuPref = linspace(0, 1000, upstream);
     inputs = rand(1, 10000) * 1000; % average density of 10 per Hz
     [linMean, linNoisy] = GaussResp_LinearSTD(inputs, nuPref, rMax, kappa);
@@ -66,6 +72,6 @@ for i = 1:length(rmse)
 %     ylabel('output frequencies');
 end
 figure();
-plot(sigmas, rmse, '.');
+plot(numN, rmse, '.');
 ylabel('RMSE');
-xlabel('sigma');
+xlabel('population size');
