@@ -1,7 +1,7 @@
 %authors: Johannes Gätjen, Lorena Morton
 close all;
 occurences = [1 1; 1 0; 0 1; 0 0];
-gamma =1.5;
+gamma =1;
 stats = [gamma/4, 0.5 - gamma / 4, 0.5 - gamma / 4, gamma / 4];
 ranges = cumsum(stats);
 samples = 10000;
@@ -16,7 +16,10 @@ psides = sum(inputs) / samples;
 cs = psides - psides .^2;
 inputProd = inputs(:, 1) .* inputs(:, 2);
 cd = (sum(inputProd)/samples) - (psides(1) * psides(2));
-C = [cs(1), cd; cd, cs(2)]
+%C = [cs(1), cd; cd, cs(2)]
+% need this versios at least for gamma = 1, otherwise there is still a
+% small correlation and the eigenvectors are wrong
+C = [0.25,0.5 - gamma/4 - 0.25;0.5 - gamma/4 - 0.25, 0.25]
 ShowEigen(C);
 
 dt = 0.1;
