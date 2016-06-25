@@ -20,10 +20,23 @@ transCov = transformed * transformed' / (Nt - 1);
 figure();
 pcolor(transCov);
 %colormap(hot);
-fullTransformed = zeros(Nb, Nt, Ng);
-for i = 1:Nb
-    fullTransformed(i, :, :) = (V' * squeeze(MUA_b_t_g(i, :, :))')';
-end
+
 figure();
 plot3(transformed(1, :), transformed(2, :), transformed(3, :), '.');hold on;
 plot3(transformed(1, 1), transformed(2, 2), transformed(3, 3), '*r', 'Markersize', 15);
+
+transformed(4:end, :) = 0;
+backProjection = V' \ transformed;
+figure();
+plot(ti, backProjection);
+% end part 4
+
+fullTransformed = zeros(Nb, Nt, Ng);
+figure();
+for i = 1:Nb
+    fullTransformed(i, :, :) = (V' * squeeze(MUA_b_t_g(i, :, :))')';
+    plot3(fullTransformed(i, :, 1), fullTransformed(i, :, 2), fullTransformed(i, :, 3), '.--');
+    plot3(fullTransformed(i, 1, 1), fullTransformed(i, 1, 2), fullTransformed(i, 1, 3), '*r', 'Markersize', 15);
+    hold on;
+end
+
