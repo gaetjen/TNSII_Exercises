@@ -5,6 +5,7 @@
 \setkomafont{disposition}{\normalfont\bfseries}
 \usepackage{amsmath}
 \usepackage{lipsum}
+\allowdisplaybreaks
 
 %title
 \title{Extra assignment:\\Inference for continuous detection and discrimination}
@@ -110,7 +111,41 @@ x_k =& \sqrt{\frac{1}{2\pi}}\\ \\
 		\right)}_{\neq 0}\\
 0 =& \sin{\theta_k - \theta_s} \\
 \theta_s =& \theta_k \\ \\
+\operatorname{p}(\sqrt{1/2\pi}, c_s, \theta_k) =& \frac{c_s e^2}{4c_0 \sqrt{2\pi}}
+	\exp{\left(
+		-\frac{1}{8c_se^2} - 
+		\frac{c_s}{c_0} - 2
+		\right)} \\
 0 = \frac{\partial \operatorname{p}(\sqrt{1/2\pi}, c_s, \theta_k)}{\partial c_s} =& 
+	\frac{c_s e^2}{4c_0 \sqrt{2\pi}}
+	\exp{\left(
+		-\frac{1}{8c_se^2} - 
+		\frac{c_s}{c_0} - 2
+		\right)}
+	\left(
+		-\frac{1}{c_0}
+		+ \frac{1}{8c_s^2e^2}
+		\right)	\\
+	+& \exp{\left(
+		-\frac{1}{8c_se^2} - 
+		\frac{c_s}{c_0} - 2
+		\right)}
+	\frac{e^2}{4c_0\sqrt{2\pi}} \\
+=& \underbrace{\left(
+	\exp{\left(
+		-\frac{1}{8c_se^2} - 
+		\frac{c_s}{c_0} - 2
+		\right)}
+	\frac{e^2}{4c_s\sqrt{2\pi}}
+	\right)}_{\neq 0} \cdot
+	\left(
+		\frac{1}{8c_se^2} - \frac{c_s}{c_0} + 1
+		\right)\\
+0 =& c_s^2 - c_sc_0 - \frac{c_0}{8e^2} \\
+c_s =& \frac{c_0}{2} +
+	\sqrt{
+		\frac{c_0^2}{4}+
+		\frac{c_0}{8e^2}}
 \end{align*}
 
 \lipsum
