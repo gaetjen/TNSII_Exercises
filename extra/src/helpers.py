@@ -1,5 +1,5 @@
 import numpy as np
-import numpy.matlib as ml
+# import numpy.matlib as ml
 import random as rnd
 import math
 
@@ -11,7 +11,7 @@ def genStimuli(contrast, duration, time, deltaT):
     #    time:     total time of stimuli to generate
     #    deltaT:   time resolution (step size)
     #    stimuli:  orientation (top row) and contrast (bottom row) over time
-    stimuli = np.zeros([2, time/deltaT])
+    stimuli = np.zeros([2, round(time/deltaT)])
     t = 0
     while t <= time:
         dur = np.random.exponential(duration)
@@ -41,11 +41,9 @@ def sensRep(preferred, stimuli, tuningWidth, sensitivity):
     # SENSREP calculate sensory representation of stimuli
     #    preferred: preferred stimulus orientation of different channels
     #    stimuli: 2×t array of stimuli, orientation (top) and contrast (bottom)
-    contrast = ml.repmat(stimuli[1, :], len(preferred), 1)
-    orientation = ml.repmat(stimuli[0, :], len(preferred), 1)
-    preferred = ml.repmat(preferred, np.size(stimuli, 1), 1)
-    means = sensitivity * contrast * np.exp(2 * math.cos(tuningWidth * (preferred - orientation))) # circular gaussian tuning
+    contrast = np.transpose(np.tile(stimuli[1, :], [len(preferred), 1]))
+    orientation = np.transpose(np.tile(stimuli[0, :], [len(preferred), 1]))
+    # preferred = ml.repmat(preferred, np.size(stimuli, 1), 1)
+    means = sensitivity * contrast * np.exp(2 * np.cos(tuningWidth * (preferred - orientation))) # circular gaussian tuning
     return means
-
-
 
