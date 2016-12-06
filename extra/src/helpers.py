@@ -2,6 +2,7 @@ import numpy as np
 # import numpy.matlib as ml
 import random as rnd
 import math
+import probabilities as prob
 
 
 def genStimuli(contrast, duration, time, deltaT):
@@ -10,40 +11,46 @@ def genStimuli(contrast, duration, time, deltaT):
     #    duration: mean duration
     #    time:     total time of stimuli to generate
     #    deltaT:   time resolution (step size)
-    #    stimuli:  orientation (top row) and contrast (bottom row) over time
+    #    stimuli:  contrast (top row) and orientation (bottom row) over time
     stimuli = np.zeros([2, round(time/deltaT)])
+    durations = np.zeros(round(time/deltaT))
     t = 0
+    idx = 0
     while t <= time:
-        dur = np.random.exponential(duration)
         con = np.random.exponential(contrast)
         ori = rnd.random() * 2 * math.pi
-        idx = round(t / deltaT)
-        stimuli[0, idx:] = ori
-        stimuli[1, idx:] = con
+        stimuli[0, idx:] = con
+        stimuli[1, idx:] = ori
+
+        dur = np.random.exponential(duration)
         t += dur
-    return stimuli
+        idxO = idx
+        idx = int(round(t / deltaT))
+        durations[idxO:] = idx - idxO
+    return stimuli, durations
 
 
 def response(numChannels, stimuli, tuningWidth, sensitivity):
     # RESPONSE responses of channels to stimuli
     #    numChannels: number of channels
-    #    stimuli:     stimuli over time, comprising orientation (top) and
-    #    contrast (bottom)
+    #    stimuli:     stimuli over time, comprising contrast (top) and
+    #    orientation (bottom)
     #    tuningWidth: tuning width for orientation
     #    sensitivity: channels' sensitivity
+    #    returns: numStimuli * numChannels of responses
     preferred = np.linspace(0, 2*math.pi, numChannels, False)
     means = sensRep(preferred, stimuli, tuningWidth, sensitivity)
-    responses = np.random.rayleigh(means / math.sqrt(math.pi / 2))
-    return responses
+    # responses = np.random.rayleigh(means / math.sqrt(math.pi / 2))
+    responses = means
+    return responses, preferred
 
 
 def sensRep(preferred, stimuli, tuningWidth, sensitivity):
-    # SENSREP calculate sensory representation of stimuli
+    # SENSREP calculate sensory representation of stimuli (mean response, given orientation and contrast)
     #    preferred: preferred stimulus orientation of different channels
-    #    stimuli: 2×t array of stimuli, orientation (top) and contrast (bottom)
-    contrast = np.transpose(np.tile(stimuli[1, :], [len(preferred), 1]))
-    orientation = np.transpose(np.tile(stimuli[0, :], [len(preferred), 1]))
-    # preferred = ml.repmat(preferred, np.size(stimuli, 1), 1)
-    means = sensitivity * contrast * np.exp(2 * np.cos(tuningWidth * (preferred - orientation))) # circular gaussian tuning
-    return means
+    #    stimuli: 2×t array of stimuli, contrast (top) and orientation (bottom)
+    #    returns: t * len(pref) array of mean responses
+    contrast = np.transpose(np.tile(stimuli[0, :], [len(preferred), 1]))
+    orientation = np.transpose(np.tile(stimuli[1, :], [len(preferred), 1]))
+    return prob.meanResp(contrast, orientation, preferred, tuningWidth, sensitivity)
 
