@@ -13,7 +13,7 @@ def genStimuli(contrast, duration, time, deltaT):
     #    deltaT:   time resolution (step size)
     #    stimuli:  contrast (top row) and orientation (bottom row) over time
     stimuli = np.zeros([2, round(time/deltaT)])
-    durations = np.zeros(round(time/deltaT))
+    durations = np.zeros(round(time/deltaT), dtype=int)
     t = 0
     idx = 0
     while t <= time:
@@ -40,8 +40,8 @@ def response(numChannels, stimuli, tuningWidth, sensitivity):
     #    returns: numStimuli * numChannels of responses
     preferred = np.linspace(0, 2*math.pi, numChannels, False)
     means = sensRep(preferred, stimuli, tuningWidth, sensitivity)
-    # responses = np.random.rayleigh(means / math.sqrt(math.pi / 2))
-    responses = means
+    responses = np.random.rayleigh(means / math.sqrt(math.pi / 2))
+    # responses = means
     return responses, preferred
 
 

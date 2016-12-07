@@ -4,11 +4,8 @@ import numpy as np
 # give the corresponding posterior distribution of stimulus parameters, given the response
 def postsGivenResp(bins, posts, response, preferred=0):
     assert 0 <= preferred <= (2 * np.pi), "preferred should be in range 0, 2π"
-    idx = np.argmin(np.abs(bins[2] - response))
-
+    idx = np.argmin(np.abs(bins[2][:-1] - response))
     slc = posts[:, :, idx]
-    # tried this, so that not almost all values lead to an underestimated response makes virtually no difference
-    # idx = np.argmin(np.abs(np.log(bins[1]) - np.log(preferred)))
     idx = np.argmin(np.abs(bins[1] - preferred))
     return np.roll(slc, idx, 1)
 
@@ -104,11 +101,28 @@ def performanceIdcs(stims, infStim, bins):
     return corrects
 
 
-def performanceDiff(stims, infStim, conZero=1):
+def accuracy(stims, infStim, conZero=1):
     oridiffs = stims[0] - infStim[0]
     oriPerf = (-np.cos(oridiffs) + 1) / 2
     conPerf = np.abs(expCDF(stims[1], conZero) - expCDF(infStim[1], conZero))
-    return oriPerf + conPerf, oriPerf, conPerf
+    return conPerf, oriPerf
+
+
+def performanceDiff(stims, infStim, durs, conZero=1, conRes=12):
+    conspace = np.logspace(np.log10(np.amin(stims[0])), np.log10(np.amax(stims[0])), conRes+1)
+    conPerf, oriPerf = accuracy(stims, infStim, conZero)
+    fDur = np.zeros([2, int(np.amax(durs))])
+    for d in range(int(np.amax(durs))):
+        fDur[0, d] = myMean(conPerf[durs == d + 1])
+        fDur[1, d] = myMean(oriPerf[durs == d + 1])
+
+    fCon = np.zeros([2, conRes])
+    for idx, c in enumerate(conspace[:-1]):
+        select = (stims[0] >= c) & (stims[0] < conspace[idx + 1])
+        fCon[0, idx] = myMean(conPerf[select])
+        fCon[1, idx] = myMean(oriPerf[select])
+
+    return fCon, fDur, conspace
 
 
 def performanceSTD(stims, infStim, durs, conRes=12):
@@ -130,6 +144,45 @@ def performanceSTD(stims, infStim, durs, conRes=12):
     return fCon, fDur, conspace
 
 
+def probLatency(stims, infStim, durs, conRes=12, thresh=0.1, conZero=1, durRes=12):
+    ds, ss = cutDownDurs(durs)
+    ds = np.array(ds)
+    conAcc, oriAcc = accuracy(stims, infStim, conZero)
+    conSingles = stims[0][ss]
+    # --> go stimulus by stimulus
+    # increment latency counter every step
+    # if at some point inference is correct, set detected to True and latency to latency counter
+    # otherwise (all inferences wrong): detected = False, latency = max (=stimulus length)
+    results = [[False] * (len(ss)-1), [0] * (len(ss)-1)]
+    for idxs, idxb in enumerate(ss[:-1]):
+        ca = conAcc[idxb:ss[idxs + 1]]
+        oa = oriAcc[idxb:ss[idxs + 1]]
+        for l in range(ss[idxs + 1] - idxb):
+            if ca[l] <= thresh and oa[l] <= thresh:
+                results[0][idxs] = True
+                results[1][idxs] = l
+                break
+        else:
+            results[1][idxs] = l
+    # leave out last stimulus, because it's probably not full length, therefore distorting results
+    # basically "histogramize" accumulate over the bins, make mean
+    fDur = np.zeros([2, durRes])
+    durspace = np.linspace(0, np.amax(ds), durRes+1)
+    for idx, d in enumerate(durspace[:-1]):
+        select = (ds[:-1] > d) & (ds[:-1] <= durspace[idx + 1])
+        fDur[0, idx] = myMean(np.array(results[0])[select])
+        fDur[1, idx] = myMean(np.array(results[1])[select])
+
+    fCon = np.zeros([2, conRes])
+    conspace = np.logspace(np.log10(np.amin(conSingles)), np.log10(np.amax(conSingles)), conRes+1)
+    for idx, c in enumerate(conspace[:-1]):
+        select = (conSingles[:-1] >= c) & (conSingles[:-1] < conspace[idx + 1])
+        fCon[0, idx] = myMean(np.array(results[0])[select])
+        fCon[1, idx] = myMean(np.array(results[1])[select])
+    # probability top, latency bottom
+    return fCon, fDur, conspace, durspace
+
+
 def expCDF(x, lmb=1):
     return 1 - np.exp(-lmb * x)
 
@@ -139,3 +192,20 @@ def myStd(x):
         return 0
     else:
         return np.nanstd(x)
+
+
+def myMean(x):
+    if len(x) == 0:
+        return 0
+    else:
+        return np.nanmean(x)
+
+
+def cutDownDurs(durs):
+    ds = [durs[0]]
+    selects = [0]
+    while selects[-1] + ds[-1] < len(durs):
+        selects.append(selects[-1] + ds[-1])
+        ds.append(durs[selects[-1]])
+    return ds, selects
+

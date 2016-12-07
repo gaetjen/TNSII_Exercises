@@ -49,3 +49,7 @@ def pJointAll(resp, ori, con, conZero, oriPreferred=0, tuningWidth=1, sensitivit
 def pJointAllLog(resp, ori, con, conZero, oriPreferred=0, tuningWidth=1, sensitivity=1):
     cond = pRespGivenOriConLog(resp, ori, con, oriPreferred, tuningWidth, sensitivity)
     return cond + pJointConOriLog(ori, con, conZero)
+
+
+def inverseExponCDF(x, lmb=1):
+    return - np.log(1 - x) / lmb
