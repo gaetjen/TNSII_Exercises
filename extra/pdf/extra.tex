@@ -70,12 +70,12 @@ Figure \ref{posts} shows the posterior probability of contrast and orientation, 
 \end{figure}
 
 \section{Probability and latency of object detection}
-
+\label{plat}
 I estimated the probability and latency of correctly detecting an object as a function of object duration and contrast. For a given sequence of stimuli and their response rates and a fixed window size I determined the most likely stimulus for every time step. The differences between true and detected contrast and orientation were transformed to be in the range $\left[0, 1\right]$. For the orientation I used the function $\operatorname{f}(\theta_s, \theta_d) = \frac{- \cos{(\theta_s - \theta_d)} + 1}{2}$ and for the contrast the function $\operatorname{f}(c_s, c_d) = \lvert \operatorname{cdf}(c_s, c_0) - \operatorname{cdf}(c_d, c_0) \rvert $ where subscripts $s$ and $d$ refer to the stimulus and detected values respectively and cdf is the cumulative density function for the distribution of stimulus contrast. If the result of these functions was smaller than a given threshold for both contrast and orientation at at least one point in time the corresponding stimulus was said to be correctly detected and the latency was set to the difference between stimulus onset and first time of correct detection.
 
 Some example results are shown in Figure \ref{funs}. Overall trends appear to be as follows: Very low contrast and very high contrast objects are more difficult to detect than objects with average contrast. The latency is more or less independent of contrast, except for very high contrasts, where the latency is higher. Latency of detection is close to the worst possible value for short stimuli and otherwise independendent of stimulus duration. Probability of detection is high for all stimuli longer than the window size, with perhaps a small positive correlation between object duration and detection probability. For objects with a shorter duration than the window size the probability of detection rises rapidly with a longer duration. See also Figure \ref{sect}.
 
-These results indicate that larger window sizes worsen detection performance. However this is only so because of the specific way of measuring the performance. Which stimulus is detected after a single correct inference is completely ignored. Because the variance of the inferred stimulus properties is larger for smaller window sizes, it is likelier to get the stimulus correct at least once, even if on average the error is larger.
+%These results indicate that larger window sizes worsen detection performance. However this is only so because of the specific way of measuring the performance. Which stimulus is detected after a single correct inference is completely ignored. Because the variance of the inferred stimulus properties is larger for smaller window sizes, it is likelier to get the stimulus correct at least once, even if on average the error is larger.
 
 \begin{figure}[h]
 \centering
@@ -96,15 +96,34 @@ These results indicate that larger window sizes worsen detection performance. Ho
 
 \section{Standard deviaton of error}
 
-std as performance index.
-high std --> same stimulus is interpreted as being different
-low std --> higher precision (can still be low accuracy)
+I estimated the precision of the inferred stimuli as a function of object duration and contrast with the standard deviation of the error. I generated stimuli, responses and inferred stimuli as described in Section \ref{plat}, but did not transform the difference into the $\left[0, 1\right]$ range. Some results are shown in Figure \ref{stds}. 
+
+Comparing window sizes of 1 and 8, with the mean duration $\tau_0$ also set to 1 or 8 show that the inference is more precise with the smaller window size. The dependence of orientation and contrast precision on object duration are basically identical. For the small window size there is no clear dependence between object duration and precision. For the longer window size there is a clear trend of higher precision for longer duration objects. The absolute standard deviation values are much higher than for the short window though, approaching the short window performance only for very long duration objects.
+
+The orientation precision seems to be independent of object contrast for small window sizes, and much larger for long windows, except for very low and very high contrast objects.
+The standard deviation of the contrast error grows with the object contrast for the short window, but is high for all object contrast values for the long window.  
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.47\textwidth, clip]{../pics/t5/oridur_highnum_1_8_1_8}
+\includegraphics[width=0.47\textwidth, clip]{../pics/t5/oridur_highnum_1_8_8_8}\\
+\includegraphics[width=0.47\textwidth, clip]{../pics/t5/condur_highnum_1_8_1_8}
+\includegraphics[width=0.47\textwidth, clip]{../pics/t5/condur_highnum_1_8_8_8}\\
+\caption{Standard deviation of orientation and contrast error as functions of object duration. Chosen parameters: $c_0 = 1, \tau_0 = 8$, number of channels $=8$, left column integration window size $=1$, right column integration window size $=8$. Note the much larger scale of the y axis for the larger window size.}
+\label{stds}
+\end{figure}
 
 \section{Optimal window size for parameters}
 
-show some plots, high window size seems to be preferred too much? (longer stimuli are weighted stronger because they are longer, aggregate every separate stimulus into one? could do it once with prob/lat, once with std)
+Finally I estimated the optimal window size for a given set of environment parameters $c_0$ and $\tau_0$. For the given parameters I generated stimuli and responses, and from the responses the inferred stimulus for different window sizes. As in Section \ref{plat} the difference of true and inferred stimulus contrast and orientation was transformed to the range $\left[0, 1\right]$ so that errors in estimated contrast and orientation would be weighted roughly equally. An exemplary result is shown in Figure \ref{optws}. We can see that with a higher $\tau_0$ longer window sizes are preferred. The relationship between contrast and optimal window size is unclear.
 
-one optimizes for having long times of high accuracy, the other for getting many stimuli correct (enough), regardless of stimulus length
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.55\textwidth, clip]{../pics/optws_chan8}
+\caption{The ``optimal'' window size as a function of environment parameters $c_0$ (contrast) and $\tau_0$ (duration), using 8 channels.}
+\label{optws}
+\end{figure}
+
 
 %\begin{align*}
 %r_k =& c_s \exp{(2 \cos{\theta_k-\theta_s)}}\\

@@ -17,16 +17,20 @@ def genStimuli(contrast, duration, time, deltaT):
     t = 0
     idx = 0
     while t <= time:
-        con = np.random.exponential(contrast)
-        ori = rnd.random() * 2 * math.pi
-        stimuli[0, idx:] = con
-        stimuli[1, idx:] = ori
-
         dur = np.random.exponential(duration)
         t += dur
         idxO = idx
         idx = int(round(t / deltaT))
-        durations[idxO:] = idx - idxO
+        if t > time:
+            idx = len(durations)
+        durations[idxO:idx] = idx - idxO
+
+        con = np.random.exponential(contrast)
+        ori = rnd.random() * 2 * math.pi
+        stimuli[0, idxO:idx] = con
+        stimuli[1, idxO:idx] = ori
+
+
     return stimuli, durations
 
 

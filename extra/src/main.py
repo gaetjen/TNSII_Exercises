@@ -248,12 +248,12 @@ def plotPost(bins, values):
 
 def taskSix(cZeros, tauZeros, windowSizes, numChans=8, numStim=100000, postRes=None):
     if postRes is None:
-        postRes = [36, 36]
+        postRes = [36, 36, 36]
     X, Y = np.meshgrid(cZeros, tauZeros)
-    bestWS = X * 0
+    bestWS = X.T * 0
     for i, c in enumerate(cZeros):
         print("cZero:", c)
-        bins, posts = analyitcPosteriorConOri(postRes[0], postRes[1], c)
+        bins, posts = analyitcPosteriorConOri(postRes[0], postRes[1], postRes[2], c)
         posts = logolize(posts)
         for j, t in enumerate(tauZeros):
             bestWS[i, j] = optWindowSize(c, t, windowSizes, numChans, numStim, bins, posts)
@@ -271,6 +271,7 @@ def optWindowSize(cZero, tauZero, candidates, numChans, numStim, bins, posts):
     stm, durs = util.genStimuli(cZero, tauZero, numStim, 1)
     resp, prefer = util.response(numChans, stm, 1, 1)
     pstW1 = infr.accumTime(bins, posts, resp, prefer, 1)
+    pstW1 = np.cumsum(pstW1, 0)
     pst = np.copy(pstW1)
     mn = np.inf
     bestWS = np.inf
@@ -319,18 +320,21 @@ def quick3DPlotHelp(X, Y, arr):
 
 
 def genDataTaskSix():
-    cZeros = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-    tauZeros = cZeros[:]
-    windowSizes = np.array(list(range(1, 1001, 100)))
-    x, y, z = taskSix(cZeros, tauZeros, windowSizes, 8, 100000)
+    # cZeros = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    tauZeros = [1, 5, 10, 30, 50, 100, 300, 500, 800, 1000]
+    cZeros = tauZeros[:]
+    windowSizes = np.array([1, 5, 10, 50, 100, 500, 1000, 5000])
+    x, y, z = taskSix(cZeros, tauZeros, windowSizes, 8, 10000)
     fig = plt.figure()
     ax = Axes3D(fig)
     x, y = np.meshgrid(np.arange(len(cZeros)), np.arange(len(tauZeros)))
-    surf = ax.plot_surface(x, y, z, rstride=1, cstride=1, cmap=cm.coolwarm, linewidth=0)
+    surf = ax.plot_surface(x, y, np.log(z.T), rstride=1, cstride=1, cmap=cm.coolwarm, linewidth=0)
     # surf = ax.plot_surface(X, Y, values[:, :-1, i], rstride=1, cstride=1, cmap=cm.coolwarm)
     plt.xlabel("contrast")
     plt.ylabel("duration")
     ax.set_zlabel("optimal window size")
+    ax.set_zticks(np.log(windowSizes))
+    ax.set_zticklabels(windowSizes)
     ax.set_xticklabels(cZeros)
     ax.set_yticklabels(tauZeros)
     plt.show()
@@ -364,6 +368,8 @@ def plotAnalyticPosterior():
 
 # taskThree(False, True)
 # plotAnalyticPosterior()
+
+genDataTaskSix()
 
 
 def taskFour(quick=True):
@@ -409,99 +415,50 @@ def taskFour(quick=True):
     plt.ylabel("mean latency of detection")
     plt.show()
 
-taskFour(False)
-if False:
-    # b, pst = analyitcPosteriorConOri()
-    # print("shape of bins, post:", np.shape(b), np.shape(pst))
-    # plotPost(b, pst)
-    # taskTwo(1000000, 100, 100)
-    # analyticMarginalResponseProb()
-    # analyticStuff()
-    cc = 1
-    bn, pst = analyitcPosteriorConOri(60, 60, cc)
-    # plotStuff(bn, pst)
-    # print(bn[1])
-    print("num zero in pst", np.sum(pst == 0))
-    print("smallest real prob", np.amin(pst[pst != 0]))
-    pst = np.log(pst)
-    print("smallest log prob, max", np.amin(pst[pst != -np.inf]), np.amax(pst))
-    # zero is not a probability! great example of how, when your prior is P(x) = 0, no amount of evidence can
-    # convince you of it being true --> make prior equal to smallest probability otherwise
-    selector = pst == -np.inf
-    pst[selector] = np.amin(pst[~selector])
-    print("min, max", np.amin(pst), np.amax(pst))
 
-    # input("cont")
-    tl = 80000
-    stm, durs = util.genStimuli(cc, 10, tl, 1)
-    print("generated stims")
-    rsp, prf = util.response(12, stm, 1, 1)
-    print("generated responses")
-    pstpst = infr.accumTime(bn, pst, rsp, prf, 3)
-    print("accumulated information over time")
-    print("infs, nans, tot:", np.sum(pstpst == -np.inf), np.sum(np.isnan(pstpst)), np.size(pstpst))
-    inf = infr.inferNaive(bn, pstpst)
-    print("inferred stimuli")
-    print("total difference", np.sum(np.abs(stm - inf)))
-    # infr.performanceIdcs(stm, inf, bn)
-    # print(np.abs(stm - foo))
-    t = np.arange(tl)
-    if False:
-        # plotting stimuli
-        plt.plot(t, stm[0], t, inf[0], )
-        plt.legend(['stim', 'inferred'])
-        plt.figure()
-        # plt.plot(t, np.sign(stm[0] - inf[0]))
-        plt.figure()
-        plt.plot(t, stm[1], t, inf[1])
-        plt.legend(['stim', 'inferred'])
-        # print(infr.performanceIdcs(stm, inf, bn))
-    if False:
-        # standard deviation performance
-        # infr.performanceDiff(stm, inf)
-        stdCon, stdDur, cs = infr.performanceSTD(stm, inf, durs)
-        # print(stdCon, stdDur, cs)
-        # print(np.shape(cs), np.shape(stdCon), np.shape(stdDur))
-        plt.loglog(cs[:-1], stdCon[0])
-        plt.legend(['contrast'])
-        plt.figure()
-        plt.semilogx(cs[:-1], stdCon[1])
-        plt.figure()
-        durRange = np.arange(np.amax(durs))
-        plt.plot(durRange, stdDur[0])
-        plt.figure()
-        plt.plot(durRange, stdDur[1])
-        plt.legend(['orientation'])
-    if False:
-        # um… something?
-        stdCon, stdDur, cs = infr.performanceDiff(stm, inf, durs, cc)
-        # print(stdCon, stdDur, cs)
-        # print(np.shape(cs), np.shape(stdCon), np.shape(stdDur))
-        plt.loglog(cs[:-1], stdCon[0])
-        plt.legend(['contrast'])
-        plt.figure()
-        plt.loglog(cs[:-1], stdCon[1])
-        plt.figure()
-        durRange = np.arange(np.amax(durs))
-        plt.plot(durRange, stdDur[0])
-        plt.figure()
-        plt.plot(durRange, stdDur[1])
-        plt.legend(['orientation'])
-    if True:
-        # latency and duration performance
-        pLtCon, pLtDur, cs, ds = infr.probLatency(stm, inf, durs, conZero=cc)
-        # print(stdCon, stdDur, cs)
-        # print(np.shape(cs), np.shape(stdCon), np.shape(stdDur))
-        plt.figure("prob of con")
-        plt.semilogx(cs[:-1], pLtCon[0])
-        plt.figure("latency of contr")
-        plt.semilogx(cs[:-1], pLtCon[1])
+def taskFive(quick=True):
+    meanContrast = 1
+    meanDuration = 8
+    windowSize = 4
+    numChans = 8
+    if quick:
+        bn, pst = analyitcPosteriorConOri(10, 10, 10, meanContrast)
+        stm, durs = util.genStimuli(meanContrast, meanDuration, 1000, 1)
+        rsp, prf = util.response(4, stm, 1, 1)
+    else:
+        bn, pst = analyitcPosteriorConOri(30, 30, 30, meanContrast)
+        stm, durs = util.genStimuli(meanContrast, meanDuration, 250000, 1)
+        rsp, prf = util.response(numChans, stm, 1, 1)      # using 12 or 4
 
-        plt.figure("prob of dur")
-        plt.plot(ds[:-1], pLtDur[0])
-        plt.figure("latency of dur")
-        plt.plot(ds[:-1], pLtDur[1], ds[:-1], ds[:-1] + 1, 'r')
-        plt.legend(["result", "worst"])
+    pst = logolize(pst)
+    pstpst = infr.accumTime(bn, pst, rsp, prf, windowSize)
+    inferred = infr.inferNaive(bn, pstpst)
+    ident = "_highnum_" + str(meanContrast) + "_" + str(meanDuration) + "_" + str(windowSize) + "_" + str(numChans)
+
+    # standard deviation performance
+    # infr.performanceDiff(stm, inf)
+    stdCon, stdDur, cs = infr.performanceSTD(stm, inferred, durs)
+    # print(stdCon, stdDur, cs)
+    # print(np.shape(cs), np.shape(stdCon), np.shape(stdDur))
+    plt.figure("concon" + ident)
+    plt.loglog(cs[:-1], stdCon[0])
+    plt.xlabel("object contrast")
+    plt.ylabel("standard deviation of contrast error")
+    plt.figure("oricon"+ident)
+    plt.semilogx(cs[:-1], stdCon[1])
+    plt.xlabel("object contrast")
+    plt.ylabel("standard deviation of orientation error")
+
+    plt.figure("condur" + ident)
+    durRange = np.arange(np.amax(durs))
+    plt.plot(durRange, stdDur[0])
+    plt.xlabel("object duration")
+    plt.ylabel("standard deviation of contrast error")
+
+    plt.figure("oridur" + ident)
+    plt.plot(durRange, stdDur[1])
+    plt.xlabel("object duration")
+    plt.ylabel("standard deviation of orientation error")
 
     plt.show()
-    print("done")
+

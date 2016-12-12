@@ -108,6 +108,7 @@ def accuracy(stims, infStim, conZero=1):
     return conPerf, oriPerf
 
 
+# mean of transformed/normalized differences
 def performanceDiff(stims, infStim, durs, conZero=1, conRes=12):
     conspace = np.logspace(np.log10(np.amin(stims[0])), np.log10(np.amax(stims[0])), conRes+1)
     conPerf, oriPerf = accuracy(stims, infStim, conZero)
