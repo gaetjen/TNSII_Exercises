@@ -14,7 +14,7 @@ def postsGivenResp(bins, posts, response, preferred=0):
 # responses of channels
 # preferred: list of the preferred orientations of the corresponding channels
 def accumChannels(bins, posts, responses, preferred):
-    assert len(responses) == len(preferred), "responses and orientation not same number!"
+    # assert len(responses) == len(preferred), "responses and orientation not same number!"
     acc = np.zeros(np.shape(posts[:, :, 0]))
     for i, r in enumerate(responses):
         acc = acc + postsGivenResp(bins, posts, r, preferred[i])
@@ -157,7 +157,7 @@ def probLatency(stims, infStim, durs, conRes=12, thresh=0.1, conZero=1, durRes=1
     for idxs, idxb in enumerate(ss[:-1]):
         ca = conAcc[idxb:ss[idxs + 1]]
         oa = oriAcc[idxb:ss[idxs + 1]]
-        for l in range(ss[idxs + 1] - idxb):
+        for l in range(ds[idxs]):
             if ca[l] <= thresh and oa[l] <= thresh:
                 results[0][idxs] = True
                 results[1][idxs] = l
@@ -166,10 +166,10 @@ def probLatency(stims, infStim, durs, conRes=12, thresh=0.1, conZero=1, durRes=1
             results[1][idxs] = l
     # leave out last stimulus, because it's probably not full length, therefore distorting results
     # basically "histogramize" accumulate over the bins, make mean
-    fDur = np.zeros([2, durRes])
-    durspace = np.linspace(0, np.amax(ds), durRes+1)
+    durspace = np.arange(1, np.amax(ds) + 1, ((np.amax(ds)-1) // (durRes-1)) + 1)
+    fDur = np.zeros([2, len(durspace)])
     for idx, d in enumerate(durspace[:-1]):
-        select = (ds[:-1] > d) & (ds[:-1] <= durspace[idx + 1])
+        select = (ds[:-1] >= d) & (ds[:-1] < durspace[idx + 1])
         fDur[0, idx] = myMean(np.array(results[0])[select])
         fDur[1, idx] = myMean(np.array(results[1])[select])
 

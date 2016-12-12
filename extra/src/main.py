@@ -16,7 +16,7 @@ def genResponses(numstimuli, conZero=1):
     conSamples = np.random.exponential(conZero, numstimuli)
     oriSamples = np.random.random(numstimuli) * 2 * np.pi
     stim = np.array([conSamples, oriSamples])
-    resp = util.response(1, stim, 1, 1)
+    resp, _ = util.response(1, stim, 1, 1)
     return np.append(stim, resp.T, 0)
 
 
@@ -47,7 +47,7 @@ def genBins(conZero=1, resolution=None, edges=True):
     minEdge = np.log10(prb.inverseExponCDF(10**-8, conZero))
     maxEdge = np.log10(prb.inverseExponCDF(1 - 10**-8, conZero))
     conspace = np.logspace(minEdge - 1, maxEdge + 1, resolution[0])
-    respspace = np.logspace(minEdge, maxEdge, resolution[2])  # see plots for part of justification of values
+    respspace = np.logspace(minEdge, maxEdge+2, resolution[2])  # see plots for part of justification of values
     if edges:
         respspace[0] = 0
         respspace[-1] = np.inf
@@ -72,14 +72,22 @@ def marginalResponseIndependent(totalsamples, mult=1, respResolution=12, conZero
     print("after:", np.sum(acc))
     plt.plot(respspace[:-1], acc)
     plt.xscale('log')
-    plt.xlabel('response rate (actual data slightly shifted right)')
+    plt.xlabel('response rate')
     plt.ylabel('probability')
     acc /= np.diff(respspace)
+    # print("diff rspace", np.diff(respspace))
+    # print("acc", acc)
+    # print("density integral:", np.einsum('i,i->i', acc[:-1], np.diff(respspace[:-1])))
     plt.figure()
-    plt.plot(respspace[:-1], margX)
+    plt.plot(respspace[:-1], acc)
     plt.xscale('log')
-    plt.xlabel('response rate (actual data slightly shifted right)')
+    plt.xlabel('response rate')
     plt.ylabel('density')
+    plt.figure()
+    plt.plot(respspace[:-1], np.log(acc))
+    plt.xscale('log')
+    plt.xlabel('response rate')
+    plt.ylabel('log density')
     plt.show()
 
 
@@ -111,9 +119,9 @@ def numericPosteriorConOri(probs):
     return rtn
 
 
-def analyitcPosteriorConOri(res1=36, res2=36, conZero=1):
-    bins = genBins(conZero, [res1, res1, res2], False)
-    res = np.zeros([res1, res1, res2])
+def analyitcPosteriorConOri(res1=36, res2=36, res3=36, conZero=1):
+    bins = genBins(conZero, [res1, res3, res2], False)
+    res = np.zeros([res1, res3, res2])
     for i, c in enumerate(bins[0]):
         for j, o in enumerate(bins[1]):
             for k, x in enumerate(bins[2]):
@@ -127,6 +135,8 @@ def analyitcPosteriorConOri(res1=36, res2=36, conZero=1):
     # and divide by x probability
     post = probs[:, :, :] / margX[:]
     # print("num zeros in posterior:", np.sum(post == 0))
+    # included this line for task one
+    # maxes(bins, post, res)
     return bins, post
 
 
@@ -154,7 +164,7 @@ def taskThree(quick=True, plot=False):
         bins, probs, dens = numericProbDens(samples)
     else:
         samples = genResponses(100000000)
-        bins, probs, dens = numericProbDens(samples, [12, 12, 12])
+        bins, probs, dens = numericProbDens(samples, [36, 36, 36])
     posts = numericPosteriorConOri(probs)
     print(np.size(posts), np.sum(posts == 0), np.sum(posts == np.inf))
     if plot:
@@ -162,7 +172,7 @@ def taskThree(quick=True, plot=False):
     return posts
 
 
-def analyticMarginalResponseProb(plotAll=False, conZero=1):
+def analyticMarginalResponseProb(plotAll=False, conZero=1, plotMarg=False):
     d1 = 100
     d2 = 100
     bins = genBins(conZero, [d1, d1, d2])
@@ -176,9 +186,22 @@ def analyticMarginalResponseProb(plotAll=False, conZero=1):
     # margX = np.einsum('ijk,ijk->k', res[1:, 1:, 1:], volumes)
     margX = np.einsum('ijk,ijk->k', res[:-1, :-1, :-1], volumes)      # probably the best one
     print(np.shape(margX), np.shape(volumes), np.shape(res), np.shape(bins[2]))
-    plt.semilogx(bins[2][:-2], margX)
-
-    print(np.einsum('i,i', margX, np.diff(bins[2][:-1])))
+    if plotMarg:
+        plt.semilogx(bins[2][:-2], margX)
+        plt.xlabel('response rate')
+        plt.ylabel('probability')
+        margX /= np.diff(bins[2][:-1])
+        plt.figure()
+        plt.plot(bins[2][:-2], margX)
+        plt.xscale('log')
+        plt.xlabel('response rate')
+        plt.ylabel('density')
+        plt.figure()
+        plt.plot(bins[2][:-2], np.log(margX))
+        plt.xscale('log')
+        plt.xlabel('response rate')
+        plt.ylabel('log density')
+        print("density integral?", np.einsum('i,i', margX, np.diff(bins[2][:-1])))
     plt.show()
     if plotAll:
         plotStuff(bins, res)
@@ -195,8 +218,10 @@ def plotStuff(bins, values):
         surf = ax.plot_surface(X, Y, np.transpose(values[:-1, :, i]), rstride=1, cstride=1, cmap=cm.coolwarm, linewidth=0)
         plt.xlabel("contrast")
         plt.ylabel("orientation")
-        ax.set_xticks(np.log10(bins[0][1:-1]))
-        ax.set_xticklabels(map("{:.1e}".format, bins[0][1:-1]))
+        ax.set_xticks(np.log10(bins[0][1:-1:5]))
+        ax.set_xticklabels(map("{:.1e}".format, bins[0][1:-1:5]))
+        ax.view_init(30, 145)
+        ax.set_zlabel("posterior probability")
         plt.show()
         #         for label in ax.xaxis.get_ticklabels():
         #             label.set_visible(False)
@@ -249,28 +274,142 @@ def optWindowSize(cZero, tauZero, candidates, numChans, numStim, bins, posts):
     pst = np.copy(pstW1)
     mn = np.inf
     bestWS = np.inf
+    print("#######################################################ü")
     for c in candidates[::-1]:
         pst[c:] = pstW1[c:] - pstW1[:-c]
         inferred = infr.inferNaive(bins, pst)
         errors = infr.accuracy(stm, inferred, cZero)
         totalError = np.sum(errors)
+        print("min so far, next error", mn, totalError)
         if totalError < mn:
             mn = totalError
             bestWS = c
     return bestWS
 
 
-cZeros = [1, 2, 3, 4, 7, 10, 15, 20, 30, 50]
-tauZeros = cZeros[:]
-windowSizes = list(range(1, 11))
-x, y, z = taskSix(cZeros, tauZeros, windowSizes, 8, 1000)
-fig = plt.figure()
-ax = Axes3D(fig)
-surf = ax.plot_surface(x, y, z, rstride=1, cstride=1, cmap=cm.coolwarm, linewidth=0)
-# surf = ax.plot_surface(X, Y, values[:, :-1, i], rstride=1, cstride=1, cmap=cm.coolwarm)
-plt.xlabel("contrast")
-plt.ylabel("duration")
-plt.show()
+# function to test if the accumulation function seems to be working
+def testAccum():
+    stms = np.array([[1, 1, 0.1, 0.001, 1, 1, 1, .001], [0, 0, 0, np.pi, np.pi, np.pi, 1, 1]])
+    bn, pst = analyitcPosteriorConOri()
+    pst = logolize(pst)
+    rsp, pref = util.response(36, stms, 1, 1)
+    print(np.shape(rsp), np.shape(pref))
+    print(len(rsp), len(pref))
+    # print(list(enumerate(rsp)))
+    accChan = infr.accumChannels(bn, pst, rsp[0], pref)
+    print(infr.inferNaive(bn, accChan[np.newaxis, :, :]))
+    quick3DPlots(accChan)
+
+
+def quick3DPlots(arr):
+    shp = np.shape(arr)
+    X, Y = np.meshgrid(np.arange(shp[0]), np.arange(shp[1]))
+    if len(shp) == 2:
+        quick3DPlotHelp(X, Y, arr)
+    else:
+        for i in range(shp[2]):
+            quick3DPlotHelp(X, Y, arr[:, :, i])
+    plt.show()
+
+
+def quick3DPlotHelp(X, Y, arr):
+    fig = plt.figure()
+    ax = Axes3D(fig)
+    ax.plot_surface(X, Y, arr, rstride=1, cstride=1, cmap=cm.coolwarm, linewidth=0)
+
+
+def genDataTaskSix():
+    cZeros = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    tauZeros = cZeros[:]
+    windowSizes = np.array(list(range(1, 1001, 100)))
+    x, y, z = taskSix(cZeros, tauZeros, windowSizes, 8, 100000)
+    fig = plt.figure()
+    ax = Axes3D(fig)
+    x, y = np.meshgrid(np.arange(len(cZeros)), np.arange(len(tauZeros)))
+    surf = ax.plot_surface(x, y, z, rstride=1, cstride=1, cmap=cm.coolwarm, linewidth=0)
+    # surf = ax.plot_surface(X, Y, values[:, :-1, i], rstride=1, cstride=1, cmap=cm.coolwarm)
+    plt.xlabel("contrast")
+    plt.ylabel("duration")
+    ax.set_zlabel("optimal window size")
+    ax.set_xticklabels(cZeros)
+    ax.set_yticklabels(tauZeros)
+    plt.show()
+
+
+# analyitcPosteriorConOri()
+# testAccum()
+# analyticMarginalResponseProb(False)
+def plotAnalyticPosterior():
+    bn, pst = analyitcPosteriorConOri()
+    exlow = pst[:, :, 15]
+    exhigh = pst[:, :, 30]
+
+    def pltPost(bin, arr):
+        X, Y = np.meshgrid(np.log10(bin[0][:-1]), bin[1][:-1])
+        print("shapes, post, x, y", np.shape(pst), np.shape(X), np.shape(Y))
+        fig = plt.figure()
+        ax = Axes3D(fig)
+        ax.plot_surface(X, Y, arr.T, rstride=1, cstride=1, cmap=cm.coolwarm, linewidth=0)
+        ax.set_xlabel("contrast")
+        ax.set_ylabel("orientation")
+        ax.set_zlabel("posterior probability")
+        ax.set_xticks(np.log10(bin[0][:-1:5]))
+        ax.set_xticklabels(map("{:.1e}".format, bin[0][:-1:5]))
+        ax.view_init(30, 145)
+
+    pltPost(bn, exlow)
+    pltPost(bn, exhigh)
+    print("responses:", bn[2][15], bn[2][30])
+    plt.show()
+
+# taskThree(False, True)
+# plotAnalyticPosterior()
+
+
+def taskFour(quick=True):
+    meanContrast = 1
+    meanDuration = 8
+    windowSize = 1
+    thresh = 0.01
+    if quick:
+        bn, pst = analyitcPosteriorConOri(10, 10, 10, meanContrast)
+        stm, durs = util.genStimuli(meanContrast, meanDuration, 1000, 1)
+        rsp, prf = util.response(4, stm, 1, 1)
+    else:
+        bn, pst = analyitcPosteriorConOri(60, 60, 60, meanContrast)
+        stm, durs = util.genStimuli(meanContrast, meanDuration, 100000, 1)
+        rsp, prf = util.response(4, stm, 1, 1)      # otherwise used 12
+
+    pst = logolize(pst)
+    pstpst = infr.accumTime(bn, pst, rsp, prf, windowSize)
+    inferred = infr.inferNaive(bn, pstpst)
+
+    pLtCon, pLtDur, cs, ds = infr.probLatency(stm, inferred, durs, conZero=meanContrast, durRes=48, thresh=thresh)
+    print(ds)
+    ident = "_4chans_" + str(meanContrast) + "_" + str(meanDuration) + "_" + str(windowSize) + "_" + str(thresh)
+    plt.figure("prob of con" + ident)
+    plt.semilogx(cs[:-1], pLtCon[0])
+    plt.xlabel("stimulus contrast")
+    plt.ylabel("mean probability of detection")
+
+    plt.figure("latency of contr" + ident)
+    plt.semilogx(cs[:-1], pLtCon[1])
+    plt.xlabel("stimulus contrast")
+    plt.ylabel("mean latency of detection")
+
+    plt.figure("prob of dur" + ident)
+    plt.plot(ds[:-1], pLtDur[0, :-1])
+    plt.xlabel("stimulus duration")
+    plt.ylabel("mean probability of detection")
+
+    plt.figure("latency of dur" + ident)
+    plt.plot(ds[:-1], pLtDur[1, :-1], ds[:-1], ds[:-1]-1, 'r')
+    plt.legend(["result", "worst"], loc='best')
+    plt.xlabel("stimulus duration")
+    plt.ylabel("mean latency of detection")
+    plt.show()
+
+taskFour(False)
 if False:
     # b, pst = analyitcPosteriorConOri()
     # print("shape of bins, post:", np.shape(b), np.shape(pst))
@@ -308,6 +447,7 @@ if False:
     # print(np.abs(stm - foo))
     t = np.arange(tl)
     if False:
+        # plotting stimuli
         plt.plot(t, stm[0], t, inf[0], )
         plt.legend(['stim', 'inferred'])
         plt.figure()
@@ -317,6 +457,7 @@ if False:
         plt.legend(['stim', 'inferred'])
         # print(infr.performanceIdcs(stm, inf, bn))
     if False:
+        # standard deviation performance
         # infr.performanceDiff(stm, inf)
         stdCon, stdDur, cs = infr.performanceSTD(stm, inf, durs)
         # print(stdCon, stdDur, cs)
@@ -332,6 +473,7 @@ if False:
         plt.plot(durRange, stdDur[1])
         plt.legend(['orientation'])
     if False:
+        # um… something?
         stdCon, stdDur, cs = infr.performanceDiff(stm, inf, durs, cc)
         # print(stdCon, stdDur, cs)
         # print(np.shape(cs), np.shape(stdCon), np.shape(stdDur))
@@ -346,6 +488,7 @@ if False:
         plt.plot(durRange, stdDur[1])
         plt.legend(['orientation'])
     if True:
+        # latency and duration performance
         pLtCon, pLtDur, cs, ds = infr.probLatency(stm, inf, durs, conZero=cc)
         # print(stdCon, stdDur, cs)
         # print(np.shape(cs), np.shape(stdCon), np.shape(stdDur))
